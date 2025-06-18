@@ -59,6 +59,7 @@ EXPOSE 8501
 # Set PATH to include virtual environment
 ENV PATH="/opt/venv/bin:$PATH"
 RUN pip show protobuf
+RUN echo "Hello"
 
 # Command to run the application
 CMD ["/bin/bash", "-c", "echo 'Starting application...' && ls -la /opt/venv/bin/ && /opt/venv/bin/python -m streamlit run app.py --server.address 0.0.0.0 --server.port 8501"]
