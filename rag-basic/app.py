@@ -1,5 +1,6 @@
 import os
 import streamlit as st
+import pandas as pd
 
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
@@ -63,6 +64,10 @@ def add_to_db(uploaded_files):
     # Initialize models if not already done
     initialize_models()
 
+    # Initialize document info list if not exists
+    if "document_info" not in st.session_state:
+        st.session_state.document_info = []
+
     for uploaded_file in uploaded_files:
         # Save the uploaded file to a temporary path
         temp_file_path = os.path.join("./temp", uploaded_file.name)
@@ -89,6 +94,23 @@ def add_to_db(uploaded_files):
 
         # Add chunks to database
         st.session_state.db.add_documents(st_chunks)
+
+        # Generate embeddings for display (limit to 5 chunks per document)
+        chunks_to_display = st_chunks[:5]
+        
+        for i, chunk in enumerate(chunks_to_display):
+            # Get embedding for this chunk
+            embedding = st.session_state.embedding_model.embed_query(chunk.page_content)
+            
+            # Store document info for display
+            doc_info = {
+                "Document Name": uploaded_file.name,
+                "Chunk Index": i,
+                "Chunk Text": chunk.page_content[:100] + "..." if len(chunk.page_content) > 100 else chunk.page_content,
+                "Embedding": str(embedding[:10]) + "..." if len(embedding) > 10 else str(embedding),  # Show first 10 dimensions
+                "Embedding Length": len(embedding)
+            }
+            st.session_state.document_info.append(doc_info)
 
         # Remove the temporary file after processing
         os.remove(temp_file_path)
@@ -161,6 +183,8 @@ def clear_models():
         del st.session_state.embedding_model
     if "db" in st.session_state:
         del st.session_state.db
+    if "document_info" in st.session_state:
+        del st.session_state.document_info
 
 def main():
     """Initialize and manage the KnowledgeQuery application interface.
@@ -263,6 +287,34 @@ Do not say "according to the context" or "mentioned in the context" or similar."
                 with st.spinner("Processing your documents..."):
                     add_to_db(pdf_docs)
                     st.success(":file_folder: Documents successfully added to the database!")
+
+    # Document Information Table
+    if "document_info" in st.session_state and st.session_state.document_info:
+        st.subheader("📊 Document Chunks & Embeddings")
+        
+        # Convert to DataFrame for better display
+        df = pd.DataFrame(st.session_state.document_info)
+        
+        # Display the table
+        st.dataframe(
+            df,
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "Document Name": st.column_config.TextColumn("Document", width="medium"),
+                "Chunk Index": st.column_config.NumberColumn("Chunk #", width="small"),
+                "Chunk Text": st.column_config.TextColumn("Content Preview", width="large"),
+                "Embedding": st.column_config.TextColumn("Vector Embedding (first 10 dims)", width="large"),
+                "Embedding Length": st.column_config.NumberColumn("Vector Dimensions", width="small")
+            }
+        )
+        
+        st.caption(f"📝 Showing up to 5 chunks per document. Total chunks displayed: {len(df)}")
+        
+        # Add button to clear document info
+        if st.button("🗑️ Clear Document Table"):
+            st.session_state.document_info = []
+            st.rerun()
 
     # Sidebar Footer
     st.sidebar.write("Arturo Gomez-Chavez")
