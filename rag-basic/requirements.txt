@@ -7,3 +7,8 @@ chromadb
 sentence-transformers
 PyPDF2
 python-dotenv
+plotly
+scikit-learn
+umap-learn
+numpy
+pandas
