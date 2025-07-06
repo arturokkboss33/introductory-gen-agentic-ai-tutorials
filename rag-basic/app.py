@@ -1,4 +1,6 @@
 import os
+import time
+import stat
 import streamlit as st
 import pandas as pd
 import shutil
@@ -7,6 +9,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 from sklearn.manifold import TSNE
 from umap import UMAP
+import gc
+import traceback
 
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
@@ -32,7 +36,6 @@ def initialize_models():
             db_dir = st.session_state.db_path
         else:
             # Create a fresh database directory with timestamp
-            import time
             timestamp = int(time.time())
             db_dir = f'./knowledge_db_{timestamp}'
             st.session_state.db_path = db_dir
@@ -42,13 +45,11 @@ def initialize_models():
         
         # Set proper permissions
         try:
-            import stat
             os.chmod(db_dir, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
         except:
             pass  # Ignore permission errors on some systems
         
         # Create a unique collection name to avoid conflicts
-        import time
         collection_name = f"knowledge_database_{int(time.time())}"
         
         try:
@@ -103,7 +104,6 @@ def reset_database():
                 del st.session_state[key]
         
         # Import time for delays
-        import time
         time.sleep(1)
         
         # Generate a new database directory name to avoid any corruption
@@ -133,7 +133,6 @@ def reset_database():
                 st.warning(f"Could not remove temp directory: {str(e)}")
         
         # Force garbage collection
-        import gc
         gc.collect()
             
         st.success(f"✅ Database reset successfully! New database will be created at: {new_db_path}")
@@ -364,8 +363,8 @@ def create_embedding_visualization(visualization_type, dimensions, max_chunks_pe
             st.warning("❌ Embedding data is empty. Please upload and process documents first.")
             return None, None
         
-        st.info(f"📊 Starting {visualization_type} {dimensions} computation...")
-        st.info(f"📈 Total available chunks: {len(st.session_state.full_embeddings_data)}")
+        #st.info(f"📊 Starting {visualization_type} {dimensions} computation...")
+        #st.info(f"📈 Total available chunks: {len(st.session_state.full_embeddings_data)}")
         
         # Subsample data if needed
         data_to_visualize = subsample_chunks_per_document(
@@ -377,11 +376,11 @@ def create_embedding_visualization(visualization_type, dimensions, max_chunks_pe
             st.warning("❌ No data to visualize after subsampling.")
             return None, None
         
-        st.info(f"📈 Processing {len(data_to_visualize)} chunks from {len(set([item['document_name'] for item in data_to_visualize]))} documents...")
+        #st.info(f"📈 Processing {len(data_to_visualize)} chunks from {len(set([item['document_name'] for item in data_to_visualize]))} documents...")
         
         # Extract embeddings and document names
         try:
-            st.info("🔄 Converting embeddings to numpy array...")
+            #st.info("🔄 Converting embeddings to numpy array...")
             
             # Extract embeddings and convert to proper numpy array
             embedding_list = []
@@ -400,7 +399,7 @@ def create_embedding_visualization(visualization_type, dimensions, max_chunks_pe
             chunk_texts = [item['chunk_text'][:100] + "..." if len(item['chunk_text']) > 100 
                            else item['chunk_text'] for item in data_to_visualize]
                            
-            st.info(f"✅ Successfully converted embeddings. Shape: {embeddings.shape}")
+            #st.info(f"✅ Successfully converted embeddings. Shape: {embeddings.shape}")
             
         except Exception as e:
             st.error(f"❌ Error extracting/converting embeddings: {str(e)}")
@@ -416,7 +415,7 @@ def create_embedding_visualization(visualization_type, dimensions, max_chunks_pe
             
             return None, None
         
-        st.info(f"🔢 Embedding matrix shape: {embeddings.shape}")
+        #st.info(f"🔢 Embedding matrix shape: {embeddings.shape}")
         
         # Check for valid embeddings
         if embeddings.size == 0:
@@ -437,7 +436,7 @@ def create_embedding_visualization(visualization_type, dimensions, max_chunks_pe
             return None, None
         
         # Apply dimensionality reduction
-        st.info(f"🧮 Computing {visualization_type} with {n_components} components...")
+        #st.info(f"🧮 Computing {visualization_type} with {n_components} components...")
         
         try:
             if visualization_type == 'UMAP':
@@ -470,7 +469,7 @@ def create_embedding_visualization(visualization_type, dimensions, max_chunks_pe
             st.error(f"❌ Error during {visualization_type} computation: {str(e)}")
             return None, None
         
-        st.info(f"✅ Dimensionality reduction complete! Shape: {reduced_embeddings.shape}")
+        #st.info(f"✅ Dimensionality reduction complete! Shape: {reduced_embeddings.shape}")
         
         # Create DataFrame for plotting
         try:
@@ -489,7 +488,7 @@ def create_embedding_visualization(visualization_type, dimensions, max_chunks_pe
             st.error(f"❌ Error creating plot data: {str(e)}")
             return None, None
         
-        st.info("📊 Creating interactive plot...")
+        #st.info("📊 Creating interactive plot...")
         
         # Create plot
         try:
@@ -568,14 +567,13 @@ def create_embedding_visualization(visualization_type, dimensions, max_chunks_pe
             st.error(f"❌ Error calculating statistics: {str(e)}")
             return None, None
         
-        st.success("🎉 Visualization created successfully!")
+        #st.success("🎉 Visualization created successfully!")
         
         return fig, stats
         
     except Exception as e:
         st.error(f"❌ Unexpected error in visualization: {str(e)}")
         st.error(f"Error type: {type(e).__name__}")
-        import traceback
         st.error(f"Traceback: {traceback.format_exc()}")
         return None, None
 
@@ -593,9 +591,8 @@ def clear_models():
 def main():
     """Initialize and manage the KnowledgeQuery application interface.
 
-    This function sets up the Streamlit application interface for KnowledgeQuery,
-    a  Insight Retrieval System. Users can enter queries related
-    to the  industry, upload research documents, and manage API 
+    This function sets up the Streamlit application interface for 'Your RAG - Insight Retrieval System'.
+    Users can enter queries related to the  industry, upload research documents, and manage API 
     keys for enhanced functionality.
 
     The main features include:
@@ -610,57 +607,11 @@ def main():
     Returns:
         None"""
     st.set_page_config(page_title="knowledgeQuery", page_icon=":microscope:")
-    st.header(" Insight Retrieval System")
+    st.header(" Your RAG - Insight Retrieval System")
 
-    # Default prompt template
-    default_prompt = """You are a highly knowledgeable assistant specializing in Environmental sciences. 
-Answer the question based only on the following context:
-{context}
-
-Answer the question based on the above context:
-{question}
-
-Use the provided context to answer the user's question accurately and concisely.
-Don't justify your answers.
-Don't give information not mentioned in the CONTEXT INFORMATION.
-Do not say "according to the context" or "mentioned in the context" or similar."""
-
-    # Prompt customization section
-    st.subheader("🎯 Customize Assistant Behavior")
-    with st.expander("Advanced: Custom Prompt Template", expanded=False):
-        st.info("💡 **Important**: Your prompt template must include `{context}` and `{question}` placeholders for the system to work properly.")
-        
-        custom_prompt = st.text_area(
-            "Enter your custom prompt template:",
-            value=default_prompt,
-            height=200,
-            help="Modify this template to change how the assistant responds. Keep {context} and {question} placeholders."
-        )
-        
-        if st.button("Reset to Default"):
-            st.rerun()
-
-    query = st.text_area(
-        ":bulb: Enter your query about the  Industry:",
-        placeholder="e.g., What are the AI applications in drug discovery?"
-    )
-
-    if st.button("Submit"):
-        if not query:
-            st.warning("Please ask a question")
-        elif not st.session_state.get("gemini_api_key"):
-            st.warning("Please enter your Gemini API key first!")
-        else:
-            # Validate that custom prompt has required placeholders
-            if "{context}" not in custom_prompt or "{question}" not in custom_prompt:
-                st.error("⚠️ Your custom prompt template must include both `{context}` and `{question}` placeholders!")
-            else:
-                with st.spinner("Thinking..."):
-                    result = run_rag_chain(query=query, custom_prompt=custom_prompt)
-                    st.write(result)
-
+    # Sidebar for API Keys and Document Processing
     with st.sidebar:
-        st.title("API Keys")
+        st.title("🔑 API Keys")
         gemini_api_key = st.text_input("Enter your Gemini API key:", type="password")
 
         if st.button("Enter"):
@@ -674,10 +625,9 @@ Do not say "according to the context" or "mentioned in the context" or similar."
 
             else:
                 st.warning("Please enter your Gemini API key to proceed.")
-    
-    with st.sidebar:
+        
         st.markdown("---")
-        st.subheader("📊 Document Processing Settings")
+        st.subheader("🗃️ Document Processing Settings")
         
         # Show current chunking parameters if they exist
         if st.session_state.get("chunking_params_set"):
@@ -718,7 +668,7 @@ Do not say "according to the context" or "mentioned in the context" or similar."
                 st.error("❌ Failed to reset database. Please try again.")
         
         st.markdown("---")
-        pdf_docs = st.file_uploader("Upload your research documents related to  Sciences (Optional) :memo:",
+        pdf_docs = st.file_uploader("Upload your research documents 🗎",
                                     type=["pdf"],
                                     accept_multiple_files=True
         )
@@ -735,175 +685,309 @@ Do not say "according to the context" or "mentioned in the context" or similar."
                     add_to_db(pdf_docs, chunk_size, chunk_overlap)
                     st.success(":file_folder: Documents successfully added to the database!")
 
-    # Document Information Table
-    if "document_info" in st.session_state and st.session_state.document_info:
-        st.subheader("📊 Document Chunks & Embeddings")
-        
-        # Convert to DataFrame for better display
-        df = pd.DataFrame(st.session_state.document_info)
-        
-        # Display the table
-        st.dataframe(
-            df,
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                "Document Name": st.column_config.TextColumn("Document", width="medium"),
-                "Chunk Index": st.column_config.NumberColumn("Chunk #", width="small"),
-                "Chunk Text": st.column_config.TextColumn("Content Preview", width="large"),
-                "Embedding": st.column_config.TextColumn("Vector Embedding (first 10 dims)", width="large"),
-                "Embedding Length": st.column_config.NumberColumn("Vector Dimensions", width="small"),
-                "Chunk Size": st.column_config.NumberColumn("Chunk Size", width="small"),
-                "Chunk Overlap": st.column_config.NumberColumn("Chunk Overlap", width="small")
-            }
-        )
-        
-        st.caption(f"📝 Showing up to 5 chunks per document. Total chunks displayed: {len(df)}")
-        
-        # Add button to clear document info
-        if st.button("🗑️ Clear Document Table"):
-            st.session_state.document_info = []
-            st.rerun()
+        st.markdown("---")
+        st.write("Arturo Gomez-Chavez")
 
-    # Embedding Visualization Section
-    if "full_embeddings_data" in st.session_state and st.session_state.full_embeddings_data:
-        st.subheader("🎯 Embedding Visualization")
+    # Create tabs
+    tab1, tab2 = st.tabs(["📊 Embedding Visualization", "💬 Query & Prompt"])
+
+    # TAB 1: Embedding Visualization
+    with tab1:
+        st.subheader("📊 Embedding Visualization")
         
-        # Get document count for reference
-        doc_names = list(set([item['document_name'] for item in st.session_state.full_embeddings_data]))
-        total_chunks = len(st.session_state.full_embeddings_data)
-        
-        st.info(f"📚 **Available Data:** {len(doc_names)} documents, {total_chunks} total chunks")
-        
-        # Debug information
-        with st.expander("🔍 Debug Information", expanded=False):
-            st.write("**Sample embedding data structure:**")
-            if st.session_state.full_embeddings_data:
-                sample_item = st.session_state.full_embeddings_data[0]
-                st.json({
-                    "document_name": sample_item.get('document_name', 'N/A'),
-                    "chunk_index": sample_item.get('chunk_index', 'N/A'),
-                    "embedding_length": len(sample_item.get('embedding', [])) if sample_item.get('embedding') else 0,
-                    "embedding_type": type(sample_item.get('embedding', None)).__name__,
-                    "chunk_text_length": len(sample_item.get('chunk_text', ''))
-                })
+        # Check if embedding data exists
+        if "full_embeddings_data" in st.session_state and st.session_state.full_embeddings_data:
+            # Get document count for reference
+            doc_names = list(set([item['document_name'] for item in st.session_state.full_embeddings_data]))
+            total_chunks = len(st.session_state.full_embeddings_data)
+            
+            st.info(f"📚 **Available Data:** {len(doc_names)} documents, {total_chunks} total chunks")
+            
+            # Debug information
+            with st.expander("🕵️ Debug Information", expanded=False):
+                st.write("**Sample embedding data structure:**")
+                if st.session_state.full_embeddings_data:
+                    sample_item = st.session_state.full_embeddings_data[0]
+                    st.json({
+                        "document_name": sample_item.get('document_name', 'N/A'),
+                        "chunk_index": sample_item.get('chunk_index', 'N/A'),
+                        "embedding_length": len(sample_item.get('embedding', [])) if sample_item.get('embedding') else 0,
+                        "embedding_type": type(sample_item.get('embedding', None)).__name__,
+                        "chunk_text_length": len(sample_item.get('chunk_text', ''))
+                    })
+                    
+                    st.write("**Document distribution:**")
+                    doc_counts = {}
+                    for item in st.session_state.full_embeddings_data:
+                        doc_name = item.get('document_name', 'Unknown')
+                        doc_counts[doc_name] = doc_counts.get(doc_name, 0) + 1
+                    st.write(doc_counts)
+            
+            # Document Information Table (in visualization tab)
+            if "document_info" in st.session_state and st.session_state.document_info:
+                #st.markdown("---")
+                st.subheader("🗃️ Document Chunks & Embeddings")
                 
-                st.write("**Document distribution:**")
-                doc_counts = {}
-                for item in st.session_state.full_embeddings_data:
-                    doc_name = item.get('document_name', 'Unknown')
-                    doc_counts[doc_name] = doc_counts.get(doc_name, 0) + 1
-                st.write(doc_counts)
+                # Convert to DataFrame for better display
+                df = pd.DataFrame(st.session_state.document_info)
+                
+                # Display the table
+                st.dataframe(
+                    df,
+                    use_container_width=True,
+                    hide_index=True,
+                    column_config={
+                        "Document Name": st.column_config.TextColumn("Document", width="medium"),
+                        "Chunk Index": st.column_config.NumberColumn("Chunk #", width="small"),
+                        "Chunk Text": st.column_config.TextColumn("Content Preview", width="large"),
+                        "Embedding": st.column_config.TextColumn("Vector Embedding (first 10 dims)", width="large"),
+                        "Embedding Length": st.column_config.NumberColumn("Vector Dimensions", width="small"),
+                        "Chunk Size": st.column_config.NumberColumn("Chunk Size", width="small"),
+                        "Chunk Overlap": st.column_config.NumberColumn("Chunk Overlap", width="small")
+                    }
+                )
+                
+                st.caption(f"📃 Showing up to 5 chunks per document. Total chunks displayed: {len(df)}")
+                
+                # Add button to clear document info
+                if st.button("🗑️ Clear Document Table"):
+                    st.session_state.document_info = []
+                    st.rerun()
+            
+            st.markdown("---")
+            st.subheader("📈 Plot dimensionality reduction")
+            # Visualization parameters in columns
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                viz_type = st.selectbox(
+                    "Visualization Method:",
+                    ["UMAP", "t-SNE"],
+                    help="UMAP is generally faster and better for preserving global structure"
+                )
+            
+            with col2:
+                dimensions = st.selectbox(
+                    "Plot Dimensions:",
+                    ["2D", "3D"],
+                    help="3D plots provide more detailed view but can be harder to interpret"
+                )
+            
+            with col3:
+                max_chunks = st.number_input(
+                    "Max chunks per document:",
+                    min_value=10,
+                    max_value=500,
+                    value=50,
+                    step=10,
+                    help="Higher values give more detail but slower computation"
+                )
+            
+            # Generate visualization button
+            if st.button("🎨 Generate Visualization", type="primary"):
+                # Create progress container
+                progress_container = st.container()
+                plot_container = st.container()
+                
+                with progress_container:
+                    # Show initial status
+                    status_placeholder = st.empty()
+                    progress_bar = st.progress(0)
+                    
+                    try:
+                        # Update progress
+                        status_placeholder.info("🚀 Initializing visualization...")
+                        progress_bar.progress(10)
+                        
+                        # Generate the visualization
+                        with st.spinner(f"Computing {viz_type} {dimensions} visualization..."):
+                            progress_bar.progress(30)
+                            status_placeholder.info(f"🧮 Running {viz_type} algorithm...")
+                            
+                            result = create_embedding_visualization(viz_type, dimensions, max_chunks)
+                            
+                            # Check if result is valid
+                            if result is None:
+                                progress_bar.progress(100)
+                                status_placeholder.error("❌ Visualization failed - no result returned")
+                                st.error("The visualization function returned no result. Please check your data and try again.")
+                            elif result == (None, None):
+                                progress_bar.progress(100)
+                                status_placeholder.error("❌ Visualization failed - check error messages above")
+                            else:
+                                # Unpack the result safely
+                                fig, stats = result
+                                
+                                if fig is None or stats is None:
+                                    progress_bar.progress(100)
+                                    status_placeholder.error("❌ Visualization partially failed - invalid results")
+                                else:
+                                    progress_bar.progress(80)
+                                    status_placeholder.info("📊 Rendering interactive plot...")
+                                    
+                                    progress_bar.progress(100)
+                                    status_placeholder.success("✅ Visualization completed successfully!")
+                                    
+                                    # Clear progress indicators after a short delay
+                                    time.sleep(1)
+                                    progress_container.empty()
+                                    
+                                    with plot_container:
+                                        # Display the plot
+                                        st.plotly_chart(fig, use_container_width=True)
+                                        
+                            
+                    except Exception as e:
+                        progress_bar.progress(100)
+                        status_placeholder.error(f"❌ Unexpected error: {str(e)}")
+                        st.error(f"Error details: {type(e).__name__}")
+                        with st.expander("🔍 Full Error Details"):
+                            st.code(traceback.format_exc())
         
-        # Visualization parameters in columns
-        col1, col2, col3 = st.columns(3)
+        else:
+            st.info("📋 **No embedding data available yet.**")
+            st.write("Please upload and process documents first using the sidebar to generate embeddings for visualization.")
+            
+            # Show sample visualization placeholder
+            st.write("---")
+            st.write("**What you'll see here after uploading documents:**")
+            st.write("- Interactive UMAP or t-SNE plots showing document chunk relationships")
+            st.write("- 2D and 3D visualization options")
+            st.write("- Hover details showing chunk content")
+            st.write("- Statistics about your document collection")
+
+        # # Document Information Table (in visualization tab)
+        # if "document_info" in st.session_state and st.session_state.document_info:
+        #     st.markdown("---")
+        #     st.subheader("🗃️ Document Chunks & Embeddings")
+            
+        #     # Convert to DataFrame for better display
+        #     df = pd.DataFrame(st.session_state.document_info)
+            
+        #     # Display the table
+        #     st.dataframe(
+        #         df,
+        #         use_container_width=True,
+        #         hide_index=True,
+        #         column_config={
+        #             "Document Name": st.column_config.TextColumn("Document", width="medium"),
+        #             "Chunk Index": st.column_config.NumberColumn("Chunk #", width="small"),
+        #             "Chunk Text": st.column_config.TextColumn("Content Preview", width="large"),
+        #             "Embedding": st.column_config.TextColumn("Vector Embedding (first 10 dims)", width="large"),
+        #             "Embedding Length": st.column_config.NumberColumn("Vector Dimensions", width="small"),
+        #             "Chunk Size": st.column_config.NumberColumn("Chunk Size", width="small"),
+        #             "Chunk Overlap": st.column_config.NumberColumn("Chunk Overlap", width="small")
+        #         }
+        #     )
+            
+        #     st.caption(f"📃 Showing up to 5 chunks per document. Total chunks displayed: {len(df)}")
+            
+        #     # Add button to clear document info
+        #     if st.button("🗑️ Clear Document Table"):
+        #         st.session_state.document_info = []
+        #         st.rerun()
+
+    # TAB 2: Query & Prompt
+    with tab2:
+        st.subheader("💬 Query & Prompt Interface")
+
+        st.subheader("🧑🏻‍⚕️ Your RAG System Status")
+        
+        col1, col2 = st.columns(2)
         
         with col1:
-            viz_type = st.selectbox(
-                "Visualization Method:",
-                ["UMAP", "t-SNE"],
-                help="UMAP is generally faster and better for preserving global structure"
-            )
+            if st.session_state.get("gemini_api_key"):
+                st.success("✅ API Key: Configured")
+            else:
+                st.error("❌ API Key: Not configured")
+            
+            if st.session_state.get("db"):
+                st.success("✅ Database: Connected")
+            else:
+                st.warning("⚠️ Database: Not initialized")
         
         with col2:
-            dimensions = st.selectbox(
-                "Plot Dimensions:",
-                ["2D", "3D"],
-                help="3D plots provide more detailed view but can be harder to interpret"
-            )
-        
-        with col3:
-            max_chunks = st.number_input(
-                "Max chunks per document:",
-                min_value=10,
-                max_value=500,
-                value=50,
-                step=10,
-                help="Higher values give more detail but slower computation"
-            )
-        
-        # Generate visualization button
-        if st.button("🎨 Generate Visualization", type="primary"):
-            # Create progress container
-            progress_container = st.container()
-            plot_container = st.container()
+            if st.session_state.get("document_info"):
+                num_docs = len(set([doc["Document Name"] for doc in st.session_state.document_info]))
+                st.info(f"📚 Documents: {num_docs} processed")
+            else:
+                st.warning("📚 Documents: None uploaded")
             
-            with progress_container:
-                # Show initial status
-                status_placeholder = st.empty()
-                progress_bar = st.progress(0)
-                
-                try:
-                    # Update progress
-                    status_placeholder.info("🚀 Initializing visualization...")
-                    progress_bar.progress(10)
-                    
-                    # Generate the visualization
-                    with st.spinner(f"Computing {viz_type} {dimensions} visualization..."):
-                        progress_bar.progress(30)
-                        status_placeholder.info(f"🧮 Running {viz_type} algorithm...")
-                        
-                        result = create_embedding_visualization(viz_type, dimensions, max_chunks)
-                        
-                        # Check if result is valid
-                        if result is None:
-                            progress_bar.progress(100)
-                            status_placeholder.error("❌ Visualization failed - no result returned")
-                            st.error("The visualization function returned no result. Please check your data and try again.")
-                        elif result == (None, None):
-                            progress_bar.progress(100)
-                            status_placeholder.error("❌ Visualization failed - check error messages above")
-                        else:
-                            # Unpack the result safely
-                            fig, stats = result
-                            
-                            if fig is None or stats is None:
-                                progress_bar.progress(100)
-                                status_placeholder.error("❌ Visualization partially failed - invalid results")
-                            else:
-                                progress_bar.progress(80)
-                                status_placeholder.info("📊 Rendering interactive plot...")
-                                
-                                progress_bar.progress(100)
-                                status_placeholder.success("✅ Visualization completed successfully!")
-                                
-                                # Clear progress indicators after a short delay
-                                import time
-                                time.sleep(1)
-                                progress_container.empty()
-                                
-                                with plot_container:
-                                    # Display the plot
-                                    st.plotly_chart(fig, use_container_width=True)
-                                    
-                                    # Show statistics about the visualization
-                                    st.caption("📊 **Visualization Statistics:**")
-                                    
-                                    # Create statistics dataframe
-                                    stats_df = pd.DataFrame([
-                                        {"Document": doc, "Chunks Visualized": count} 
-                                        for doc, count in stats['doc_counts'].items()
-                                    ])
-                                    
-                                    col_stats1, col_stats2 = st.columns(2)
-                                    with col_stats1:
-                                        st.dataframe(stats_df, hide_index=True, use_container_width=True)
-                                    
-                                    with col_stats2:
-                                        st.metric("Total Points", stats['total_points'])
-                                        st.metric("Original Dimensions", stats['embedding_dim'])
-                                        st.metric("Reduced Dimensions", stats['reduced_dim'])
-                        
-                except Exception as e:
-                    progress_bar.progress(100)
-                    status_placeholder.error(f"❌ Unexpected error: {str(e)}")
-                    st.error(f"Error details: {type(e).__name__}")
-                    import traceback
-                    with st.expander("🔍 Full Error Details"):
-                        st.code(traceback.format_exc())
+            if st.session_state.get("full_embeddings_data"):
+                total_chunks = len(st.session_state.full_embeddings_data)
+                st.info(f"📑 Total Chunks: {total_chunks}")
+            else:
+                st.warning("📑 Total Chunks: 0")
+        
+        # Default prompt template
+        default_prompt = """You are a highly knowledgeable assistant specializing in Environmental sciences. 
+Answer the question based only on the following context:
+{context}
 
-    # Sidebar Footer
-    st.sidebar.write("Arturo Gomez-Chavez")
-             
+Answer the question based on the above context:
+{question}
+
+Use the provided context to answer the user's question accurately and concisely.
+Don't justify your answers.
+Don't give information not mentioned in the CONTEXT INFORMATION.
+Do not say "according to the context" or "mentioned in the context" or similar."""
+
+        # Prompt customization section
+        st.subheader("📝 Customize Assistant Behavior")
+        with st.expander("Advanced: Custom Prompt Template", expanded=False):
+            st.info("💡 **Important**:\n " \
+                    "- Your prompt template must include `{context}` and `{question}` placeholders for the system to work properly.\n" \
+                    "- Please modify the field in which the assitant is specialized in, to match your industry of interest.")
+            
+            custom_prompt = st.text_area(
+                "Enter your custom prompt template:",
+                value=default_prompt,
+                height=200,
+                help="Modify this template to change how the assistant responds. Keep {context} and {question} placeholders."
+            )
+            
+            if st.button("Reset to Default"):
+                st.rerun()
+
+        # Query section
+        st.markdown("---")
+        st.subheader("🔍 Ask Your Question")
+        query = st.text_area(
+            ":bulb: Enter your query about the Industry:",
+            placeholder="e.g., What are the AI applications in drug discovery?"
+        )
+
+        if st.button("Submit Query", type="primary"):
+            if not query:
+                st.warning("Please ask a question")
+            elif not st.session_state.get("gemini_api_key"):
+                st.warning("Please enter your Gemini API key first!")
+            else:
+                # Validate that custom prompt has required placeholders
+                if "{context}" not in custom_prompt or "{question}" not in custom_prompt:
+                    st.error("⚠️ Your custom prompt template must include both `{context}` and `{question}` placeholders!")
+                else:
+                    with st.spinner("Thinking..."):
+                        result = run_rag_chain(query=query, custom_prompt=custom_prompt)
+                        
+                        # Display the result in a nice format
+                        st.subheader("📝 Response:")
+                        st.write(result)
+                        
+                        # Show query details
+                        with st.expander("💡 Details on Chunks used for the query", expanded=False):
+                            st.write(f"**Query:** {query}")
+                            st.write(f"**Custom prompt used:** {'Yes' if custom_prompt != default_prompt else 'No (default)'}")
+                            if st.session_state.get("db"):
+                                try:
+                                    # Try to show some retrieval info
+                                    retriever = st.session_state.db.as_retriever(search_type="similarity", search_kwargs={'k': 5})
+                                    docs = retriever.get_relevant_documents(query)
+                                    st.write(f"**Retrieved {len(docs)} relevant document chunks**")
+                                    for i, doc in enumerate(docs):  # Show first 3
+                                        st.write(f"Chunk {i+1}: {doc.page_content}...")
+                                except:
+                                    st.write("Could not retrieve document details")
+
 if __name__ == "__main__":
     main()
