@@ -1,5 +1,6 @@
 """
-File: app.py
+app.py - Main Streamlit application for RAG-based document query system
+
 Description: [Brief description of the file's purpose]
 Author: Arturo Gomez-Chavez
 Creation Date: 07.07.2025
@@ -8,10 +9,6 @@ Contributors/Editors:
 License: MIT License - See LICENSE.MD file for details
 Contact & Support:
 - Email: [support@example.com]
-"""
-
-"""
-app.py - Main Streamlit application for RAG-based document query system
 
 This is the main application file that brings together all RAG components:
 - Document processing and chunking (dbchunks.py)
