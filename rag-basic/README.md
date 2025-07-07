@@ -11,7 +11,7 @@ A beginner-friendly Retrieval-Augmented Generation (RAG) application built with 
 ### Deploy and Run
 ```bash
 # Clone the repository
-git clone <git@github.com:arturokkboss33/introductory-gen-agentic-ai-tutorials.git>
+git clone git@github.com:arturokkboss33/introductory-gen-agentic-ai-tutorials.git
 cd introductory-gen-agentic-ai-tutorials/rag-basic
 
 # Build and run with Docker Compose
