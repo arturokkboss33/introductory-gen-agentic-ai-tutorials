@@ -19,8 +19,8 @@ import traceback
 # Import our custom modules
 from utils import initialize_models, clear_models, reset_database, get_safe_chunking_defaults, validate_chunking_parameters
 from dbchunks import chunkize_and_add_to_db, get_chunk_statistics
-from plotembeddings import create_embedding_visualization, display_embedding_statistics
-from ragchain import run_rag_chain, get_relevant_documents, validate_prompt_template
+from plotembeddings import create_embedding_visualization
+from ragchain import run_rag_chain, get_relevant_documents, validate_prompt_template, validate_temperature, get_temperature_description
 
 
 def main():
@@ -230,8 +230,88 @@ Justify your answers.
 Don't give information not mentioned in the CONTEXT INFORMATION.
 Do not say "according to the context" or "mentioned in the context" or similar."""
 
+        # Advanced Configuration Section
+        st.subheader("🕵🏽 Customize AI Assistant")
+        
+        # Temperature Control Section
+        st.subheader("🌡️ Response Creativity Control")
+        
+        # Initialize temperature in session state if not present
+        if "temperature" not in st.session_state:
+            st.session_state.temperature = 1.0
+        
+        # Temperature slider with real-time feedback
+        temperature = st.slider(
+            "Temperature: Common LLM parameter that controls randomness/creativity of responses",
+            min_value=0.0,
+            max_value=2.0,
+            value=st.session_state.get("temperature", 1.0),
+            step=0.1,
+            help="Controls randomness in AI responses. Lower = more focused, Higher = more creative"
+        )
+        
+        # Store temperature in session state
+        st.session_state.temperature = temperature
+        
+        # Validate and show temperature description
+        is_valid, error_msg, normalized_temp = validate_temperature(temperature)
+        if is_valid:
+            description = get_temperature_description(temperature)
+            st.markdown(description)
+        else:
+            st.error(f"⚠️ {error_msg}")
+        
+        # Temperature examples and guidance
+        with st.expander("🎯 Temperature Guide & Examples", expanded=False):
+            st.write(
+                "**Temperature Examples:**\n\n"
+                "🎯 **0.0 (Deterministic)** - Perfect for:\n"
+                "- Factual questions requiring consistent answers\n"
+                "- Technical documentation queries\n"
+                "- When you need the same response every time\n\n"
+                
+                "⚖️ **0.7 (Balanced)** - Great for:\n"
+                "- General knowledge questions\n"
+                "- Explanations that benefit from natural variation\n"
+                "- Most everyday use cases\n\n"
+                
+                "🎨 **1.0 (Default - Creative)** - Ideal for:\n"
+                "- Complex analysis requiring interpretation\n"
+                "- Brainstorming and idea generation\n"
+                "- Natural, conversational responses\n\n"
+                
+                "🚀 **1.5+ (Highly Creative)** - Best for:\n"
+                "- Creative writing tasks\n"
+                "- Exploring multiple perspectives\n"
+                "- When you want diverse, unexpected insights\n\n"
+                
+                "💡 **Tip:** Start with 1.0 and adjust based on your needs!"
+            )
+        
+        # Current temperature status
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("**Current Temperature**", f"{temperature:.1f}")
+        with col2:
+            # Quick preset buttons
+            st.write("**Quick Presets:**")
+            preset_col1, preset_col2, preset_col3 = st.columns(3)
+            with preset_col1:
+                if st.button("🎯 Factual", help="Temperature: 0.0"):
+                    st.session_state.temperature = 0.0
+                    st.rerun()
+            with preset_col2:
+                if st.button("⚖️ Balanced", help="Temperature: 0.7"):
+                    st.session_state.temperature = 0.7
+                    st.rerun()
+            with preset_col3:
+                if st.button("🎨 Creative", help="Temperature: 1.0"):
+                    st.session_state.temperature = 1.0
+                    st.rerun()
+        
+        st.markdown("---")
+
         # Prompt customization section
-        st.subheader("🎯 Customize AI Assistant")
         with st.expander("🔧 Advanced: Custom Prompt Template", expanded=False):
             st.info(
                 "💡 **Prompt Engineering Tips:**\n"
@@ -281,8 +361,15 @@ Do not say "according to the context" or "mentioned in the context" or similar."
                     st.error(f"⚠️ Fix your prompt template: {error_msg}")
                 else:
                     with st.spinner("🤔 Thinking and searching through your documents..."):
-                        # Get the answer using RAG
-                        result = run_rag_chain(query=query, custom_prompt=custom_prompt)
+                        # Get the current temperature from session state
+                        current_temperature = st.session_state.get("temperature", 1.0)
+                        
+                        # Get the answer using RAG with temperature control
+                        result = run_rag_chain(
+                            query=query, 
+                            custom_prompt=custom_prompt,
+                            temperature=current_temperature
+                        )
                         
                         # Display the result
                         st.subheader("📝 Answer:")
@@ -291,6 +378,8 @@ Do not say "according to the context" or "mentioned in the context" or similar."
                         # Show additional details
                         with st.expander("🔍 Details About This Answer", expanded=False):
                             st.write(f"**Your Question:** {query}")
+                            st.write(f"**Temperature Used:** {current_temperature}")
+                            st.write(f"**Temperature Effect:** {get_temperature_description(current_temperature)}")
                             st.write(f"**Custom Prompt Used:** {'Yes' if custom_prompt.strip() != default_prompt.strip() else 'No (using default)'}")
                             
                             # Try to show retrieved documents
