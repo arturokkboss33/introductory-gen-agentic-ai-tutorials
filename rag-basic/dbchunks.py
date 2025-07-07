@@ -6,13 +6,14 @@ This module handles:
 - Splitting documents into smaller chunks
 - Adding processed chunks to the vector database
 - Managing document metadata and embeddings
+- Cleaning up old databases before processing new documents
 """
 
 import os
 import streamlit as st
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters.sentence_transformers import SentenceTransformersTokenTextSplitter
-from utils import initialize_models
+from utils import initialize_models, cleanup_old_databases
 
 
 def chunkize_and_add_to_db(uploaded_files, chunk_size, chunk_overlap):
@@ -20,6 +21,7 @@ def chunkize_and_add_to_db(uploaded_files, chunk_size, chunk_overlap):
     Processes uploaded PDF files by splitting them into chunks and adding to the database.
     
     This function performs the following steps:
+    0. Cleans up old database directories to prevent accumulation
     1. Validates input files and API key
     2. Initializes models if needed
     3. For each PDF file:
@@ -54,6 +56,22 @@ def chunkize_and_add_to_db(uploaded_files, chunk_size, chunk_overlap):
         st.error("❌ Please enter your Gemini API key first!")
         return
 
+    # Step 0: Clean up old database directories before creating new ones
+    st.info("🧹 Cleaning up old databases...")
+    cleanup_old_databases()
+    
+    # Clear existing session state to start fresh
+    session_keys_to_clear = [
+        "db", 
+        "embedding_model", 
+        "document_info", 
+        "full_embeddings_data"
+    ]
+    
+    for key in session_keys_to_clear:
+        if key in st.session_state:
+            del st.session_state[key]
+
     # Initialize models (embedding model and vector database)
     initialize_models()
 
@@ -83,14 +101,14 @@ def chunkize_and_add_to_db(uploaded_files, chunk_size, chunk_overlap):
         status_text.text(f"📄 Processing: {uploaded_file.name} ({file_index + 1}/{total_files})")
         
         # Step 1: Save uploaded file to temporary location
-        temp_file_path = os.path.join("./temp", uploaded_file.name)
-        os.makedirs(os.path.dirname(temp_file_path), exist_ok=True)
+        tmp_file_path = os.path.join("./tmp-data", uploaded_file.name)
+        os.makedirs(os.path.dirname(tmp_file_path), exist_ok=True)
 
-        with open(temp_file_path, "wb") as temp_file:
-            temp_file.write(uploaded_file.getbuffer())
+        with open(tmp_file_path, "wb") as tmp_file:
+            tmp_file.write(uploaded_file.getbuffer())
 
         # Step 2: Load PDF content using LangChain's PyPDFLoader
-        loader = PyPDFLoader(temp_file_path)
+        loader = PyPDFLoader(tmp_file_path)
         data = loader.load()  # Returns list of Document objects
 
         # Step 3: Extract metadata and content from loaded documents
@@ -149,7 +167,7 @@ def chunkize_and_add_to_db(uploaded_files, chunk_size, chunk_overlap):
             st.session_state.document_info.append(doc_info)
 
         # Step 8: Clean up - remove temporary file
-        os.remove(temp_file_path)
+        os.remove(tmp_file_path)
     
     # Complete the progress bar and show final status
     progress_bar.progress(1.0)

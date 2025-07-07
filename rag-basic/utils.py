@@ -5,6 +5,7 @@ This module contains functions for:
 - Initializing embedding models and vector databases
 - Clearing cached models from session state
 - Managing database connections and paths
+- Cleaning up old database directories
 """
 
 import os
@@ -13,8 +14,60 @@ import stat
 import streamlit as st
 import shutil
 import gc
+import glob
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
+
+
+def cleanup_old_databases():
+    """
+    Clean up all existing knowledge database directories to prevent accumulation.
+    
+    This function:
+    1. Finds all knowledge_db* directories in both current and tmp-db/ directories
+    2. Safely removes them to free up disk space
+    3. Creates the tmp-db/ directory if it doesn't exist
+    
+    Returns:
+        int: Number of databases cleaned up
+    """
+    cleaned_count = 0
+    
+    try:
+        # Ensure tmp-db directory exists
+        tmp_db_dir = './tmp-db'
+        os.makedirs(tmp_db_dir, exist_ok=True)
+        
+        # Find all knowledge database directories in current directory
+        current_dir_dbs = glob.glob('./knowledge_db*')
+        
+        # Find all knowledge database directories in tmp-db directory
+        tmp_dir_dbs = glob.glob('./tmp-db/knowledge_db*')
+        
+        # Combine all database directories
+        all_db_dirs = current_dir_dbs + tmp_dir_dbs
+        
+        for db_dir in all_db_dirs:
+            try:
+                if os.path.exists(db_dir) and os.path.isdir(db_dir):
+                    shutil.rmtree(db_dir)
+                    cleaned_count += 1
+                    #st.info(f"🗑️ Cleaned up old database: {db_dir}")
+            except Exception as e:
+                st.warning(f"⚠️ Could not remove {db_dir}: {str(e)}")
+        
+        if cleaned_count > 0:
+            pass
+            # Uncomment the next line to show success message in Streamlit
+            #st.success(f"✅ Cleaned up {cleaned_count} old database(s)")
+        else:
+            pass
+            #st.info("📂 No old databases found to clean up")
+            
+    except Exception as e:
+        st.warning(f"⚠️ Error during database cleanup: {str(e)}")
+    
+    return cleaned_count
 
 
 def initialize_models():
@@ -26,7 +79,7 @@ def initialize_models():
     2. A Chroma vector database for storing and retrieving document embeddings
     
     The models are cached in Streamlit's session state to avoid re-initialization
-    on every interaction.
+    on every interaction. Database is now stored in tmp-db/ directory to keep it hidden.
     """
     # Initialize the embedding model if not already created
     if "embedding_model" not in st.session_state:
@@ -37,13 +90,13 @@ def initialize_models():
     
     # Initialize the vector database if not already created
     if "db" not in st.session_state:
-        # Use the stored database path if available, otherwise create a new one
+        # Use the stored database path if available, otherwise create a new one in tmp-db/
         if "db_path" in st.session_state:
             db_dir = st.session_state.db_path
         else:
-            # Create a fresh database directory with timestamp to avoid conflicts
+            # Create a fresh database directory with timestamp in tmp-db/ to keep it hidden
             timestamp = int(time.time())
-            db_dir = f'./knowledge_db_{timestamp}'
+            db_dir = f'./tmp-db/knowledge_db_{timestamp}'
             st.session_state.db_path = db_dir
         
         # Ensure the database directory exists and is writable
@@ -68,11 +121,11 @@ def initialize_models():
             #st.info(f"✅ Database initialized at: {db_dir}")
         except Exception as e:
             # If database creation fails, try with a completely fresh directory
-            st.warning(f"Database creation failed: {e}. Trying with fresh directory...")
+            #st.warning(f"Database creation failed: {e}. Trying with fresh directory...")
             
-            # Create a new timestamped directory
+            # Create a new timestamped directory in tmp-db/
             fresh_timestamp = int(time.time()) + 1
-            fresh_db_dir = f'./knowledge_db_{fresh_timestamp}_fresh'
+            fresh_db_dir = f'./tmp-db/knowledge_db_{fresh_timestamp}_fresh'
             st.session_state.db_path = fresh_db_dir
             
             os.makedirs(fresh_db_dir, exist_ok=True)
@@ -84,7 +137,7 @@ def initialize_models():
                 embedding_function=st.session_state.embedding_model,
                 persist_directory=fresh_db_dir
             )
-            st.success(f"✅ Fresh database created at: {fresh_db_dir}")
+            #st.success(f"✅ Fresh database created at: {fresh_db_dir}")
 
 
 def clear_models():
@@ -116,7 +169,7 @@ def reset_database():
     
     This function:
     1. Clears all session state variables related to the database
-    2. Creates a new database directory path to avoid corruption
+    2. Creates a new database directory path in tmp-db/ to avoid corruption
     3. Removes temporary files
     4. Forces garbage collection to free memory
     
@@ -142,31 +195,23 @@ def reset_database():
         # Small delay to ensure cleanup
         time.sleep(1)
         
-        # Generate a new database directory name to avoid any corruption
+        # Generate a new database directory name in tmp-db/ to avoid any corruption
         timestamp = int(time.time())
-        new_db_path = f'./knowledge_db_{timestamp}'
-        old_db_path = './knowledge_db'
+        new_db_path = f'./tmp-db/knowledge_db_{timestamp}'
         
         # Store the new database path for future use
         st.session_state.db_path = new_db_path
         
-        # Try to handle the old database directory
-        if os.path.exists(old_db_path):
-            try:
-                # Don't try to delete - just rename it out of the way
-                backup_name = f'./knowledge_db_old_{timestamp}'
-                os.rename(old_db_path, backup_name)
-                st.info(f"Old database moved to {backup_name}")
-            except Exception as e:
-                st.warning(f"Could not move old database: {e}")
+        # Clean up old databases
+        cleanup_old_databases()
         
-        # Remove temp directory if it exists
-        temp_path = './temp'
-        if os.path.exists(temp_path):
+        # Remove tmp-data directory if it exists (but not the tmp-db directory we're using for databases)
+        tmp_data_path = './tmp-data'
+        if os.path.exists(tmp_data_path):
             try:
-                shutil.rmtree(temp_path)
+                shutil.rmtree(tmp_data_path)
             except Exception as e:
-                st.warning(f"Could not remove temp directory: {str(e)}")
+                st.warning(f"Could not remove tmp-data directory: {str(e)}")
         
         # Force garbage collection to free memory
         gc.collect()
