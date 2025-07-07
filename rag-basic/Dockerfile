@@ -16,9 +16,16 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Create symbolic links for python and pip
-RUN ln -sf /usr/bin/python3 /usr/bin/python && \
-    ln -sf /usr/bin/pip3 /usr/bin/pip
+# Create symbolic link for python
+RUN ln -sf /usr/bin/python3 /usr/bin/python
+
+# Install uv - the fast Python package installer
+# Download the latest installer
+ADD https://astral.sh/uv/0.7.19/install.sh /uv-installer.sh
+# Run the installer then remove it
+RUN sh /uv-installer.sh && rm /uv-installer.sh
+# Ensure the installed binary is on the `PATH`
+ENV PATH="/root/.local/bin/:$PATH"
 
 # Set working directory
 WORKDIR /app
@@ -26,37 +33,34 @@ WORKDIR /app
 # Copy requirements file
 COPY requirements.txt .
 
-# Create virtual environment
-RUN python3 -m venv /opt/venv
+# Create virtual environment using uv (much faster than python -m venv)
+RUN uv venv /opt/venv
 
 # Set PATH to include virtual environment
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Activate virtual environment and upgrade pip
-RUN /opt/venv/bin/pip install --upgrade pip
 
-# Install Python dependencies in virtual environment
-RUN /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
-RUN /opt/venv/bin/pip install 'protobuf<=3.20.1' --force-reinstall
-RUN /opt/venv/bin/pip install pypdf
+# Install CPU-only PyTorch first to avoid CUDA dependencies which significantly slow down the docker build process
+RUN uv pip install --no-cache --index-url https://download.pytorch.org/whl/cpu torch torchvision torchaudio
+# Install Python dependencies using uv (significantly faster than pip)
+RUN uv pip install --no-cache -r requirements.txt
+RUN uv pip install 'protobuf<=3.20.1' --force-reinstall
 
 # Debug: Check what's installed and where
 RUN echo "=== Virtual environment contents ===" && \
     ls -la /opt/venv/bin/ && \
     echo "=== Checking streamlit installation ===" && \
-    /opt/venv/bin/pip list | grep streamlit && \
+    uv pip list | grep streamlit && \
     echo "=== Python path ===" && \
-    /opt/venv/bin/python -c "import sys; print(sys.path)" && \
+    python -c "import sys; print(sys.path)" && \
     echo "=== Trying to find streamlit ===" && \
     find /opt/venv -name "*streamlit*" -type f
 
-# Expose port for Streamlit
+# Expose port for Streamlit -- Keeping for documentation purposes
 EXPOSE 8501
 
-# Set PATH to include virtual environment
-ENV PATH="/opt/venv/bin:$PATH"
-RUN pip show protobuf
-RUN echo "Hello"
+# Show protobuf version for debugging
+RUN uv pip show protobuf
 
 # Command to run the application
-CMD ["/bin/bash", "-c", "echo 'Starting application...' && ls -la /opt/venv/bin/ && /opt/venv/bin/python -m streamlit run app.py --server.address 0.0.0.0 --server.port 8501"]
+CMD ["/bin/bash", "-c", "echo 'Starting application...' && ls -la /opt/venv/bin/ && python -m streamlit run app.py --server.address 0.0.0.0 --server.port 8501"]
