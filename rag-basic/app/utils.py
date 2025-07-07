@@ -1,4 +1,16 @@
 """
+File: utils.py
+Description: Utility functions
+Author: Arturo Gomez-Chavez
+Creation Date: 07.07.2025
+Institution/Organization: NA
+Contributors/Editors:
+License: MIT License - See LICENSE.MD file for details
+Contact & Support:
+- Email: [support@example.com]
+"""
+
+"""
 utils.py - Utility functions for model and database initialization and management
 
 This module contains functions for:

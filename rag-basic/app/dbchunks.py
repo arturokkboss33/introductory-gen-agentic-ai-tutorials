@@ -1,4 +1,16 @@
 """
+File: dbchunks.py
+Description: Database operations and data access layer
+Author: Arturo Gomez-Chavez
+Creation Date: 07.07.2025
+Institution/Organization: NA
+Contributors/Editors:
+License: MIT License - See LICENSE.MD file for details
+Contact & Support:
+- Email: [support@example.com]
+"""
+
+"""
 dbchunks.py - Document processing and database management
 
 This module handles:

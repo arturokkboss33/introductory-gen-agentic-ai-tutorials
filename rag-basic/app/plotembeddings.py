@@ -1,4 +1,16 @@
 """
+File: plotembeddings.py
+Description: [Brief description of the file's purpose]
+Author: Arturo Gomez-Chavez
+Creation Date: 07.07.2025
+Institution/Organization: NA
+Contributors/Editors:
+License: MIT License - See LICENSE.MD file for details
+Contact & Support:
+- Email: [support@example.com]
+"""
+
+"""
 plotembeddings.py - Embedding visualization and dimensionality reduction
 
 This module provides functions for:
