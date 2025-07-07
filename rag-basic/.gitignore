@@ -1,4 +1,3 @@
-data/
 *env*
-knowledge_db/
-temp/
+app/tmp-data/
+app/tmp-db/

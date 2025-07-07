@@ -5,16 +5,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: rag-basic-app
+    container_name: rag-basic-concepts-app
     ports:
       - "8501:8501"
     volumes:
-      - .:/app
-      - ./data:/app/data
+      - ./app:/app
     environment:
       - PYTHONPATH=/app
-    env_file:
-      - .env
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]

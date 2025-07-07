@@ -50,9 +50,6 @@ RUN echo "=== Virtual environment contents ===" && \
     echo "=== Trying to find streamlit ===" && \
     find /opt/venv -name "*streamlit*" -type f
 
-# Copy application code
-COPY . .
-
 # Expose port for Streamlit
 EXPOSE 8501
 
