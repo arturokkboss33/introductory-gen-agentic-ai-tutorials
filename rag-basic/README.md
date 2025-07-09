@@ -2,6 +2,9 @@
 
 A beginner-friendly Retrieval-Augmented Generation (RAG) application built with Streamlit that helps understand how RAG works by allowing you to upload PDF documents, explore how they are represented for the models and ask questions about them.
 
+![Alt text](gif-input-api-key.gif)
+![Alt text](gif-explore-docs-prompt.gif)
+
 ## 🚀 Quick Start with Docker
 
 ### Prerequisites
@@ -28,6 +31,33 @@ If you wish to change the port number, modify the `Dockerfile` and `docker-compo
 
 ### What is RAG?
 Retrieval-Augmented Generation (RAG) combines the functionalities of information retrieval with language generation. Instead of relying solely on the AI model's training data, RAG first retrieves relevant information from your specific documents, then uses that context to generate accurate, grounded answers.
+
+### Understanding the RAG Pipeline
+1. **Documents** → **Chunks** → **Embeddings** → **Vector Database**
+2. **User Question** → **Query Embedding** → **Similarity Search** → **Retrieved Context**
+3. **Context + Question** → **Language Model** → **Generated Answer**
+
+### Important Parameters to Experiment With
+
+- **Chunk Size**: Larger chunks provide more context but may be less precise
+- **Chunk Overlap**: Prevents important information from being split across chunks
+- **Temperature**: Controls how creative vs. factual the responses are
+- **Retrieval Count**: Number of relevant chunks to include (fixed at 5 in this app)
+
+### Visualization Insights
+- **Clusters**: Groups of similar content (udnerlying themes or topics)
+- **Distance**: Semantic similarity between documents
+
+### 🧪 Experiment and Learn
+
+Try different combinations of:
+- Various chunk sizes (small: 100, medium: 200, large: 500)
+- Different overlap ratios (0%, 25%, 50%)
+- Temperature settings for different question types
+- Custom prompts for domain-specific responses
+
+The visualization tab helps you understand how these parameters affect document representation and retrieval quality.
+
 
 ## 🔧 Core Functionality
 
@@ -240,31 +270,3 @@ Retrieval-Augmented Generation (RAG) combines the functionalities of information
   - Model initialization and caching
   - Database management and cleanup
   - Configuration and parameter handling
-
-## 🎯 Key Learning Points for RAG Beginners
-
-### Understanding the RAG Pipeline
-1. **Documents** → **Chunks** → **Embeddings** → **Vector Database**
-2. **User Question** → **Query Embedding** → **Similarity Search** → **Retrieved Context**
-3. **Context + Question** → **Language Model** → **Generated Answer**
-
-### Important Parameters to Experiment With
-
-- **Chunk Size**: Larger chunks provide more context but may be less precise
-- **Chunk Overlap**: Prevents important information from being split across chunks
-- **Temperature**: Controls how creative vs. factual the responses are
-- **Retrieval Count**: Number of relevant chunks to include (fixed at 5 in this app)
-
-### Visualization Insights
-- **Clusters**: Groups of similar content (udnerlying themes or topics)
-- **Distance**: Semantic similarity between documents
-
-## 🧪 Experiment and Learn
-
-Try different combinations of:
-- Various chunk sizes (small: 100, medium: 200, large: 500)
-- Different overlap ratios (0%, 25%, 50%)
-- Temperature settings for different question types
-- Custom prompts for domain-specific responses
-
-The visualization tab helps you understand how these parameters affect document representation and retrieval quality.

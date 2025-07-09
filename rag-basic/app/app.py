@@ -562,6 +562,11 @@ def render_embedding_tab():
             "- Statistics about your document collection\n"
             "- Insights into how your documents cluster by topic"
         )
+    
+        # Show example of what visualization looks like
+        st.write("**Example Visualization:**")
+        st.image("./example-plot-embeddings.png", use_container_width=True,
+                 caption="Example: Document chunks visualized in 2D space, colored by source document")
 
 def render_document_info_table():
     """
