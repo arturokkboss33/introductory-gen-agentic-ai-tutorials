@@ -69,6 +69,8 @@ The visualization tab helps you understand how these parameters affect document 
 
 **Step-by-Step Process**:
 
+![Alt text](rag-diagram.webp)
+
 1. **Document Loading** (`chunkize_and_add_to_db()`)
    - Loads PDF files using Langchain's `PyPDFLoader`
       ```
@@ -120,6 +122,7 @@ The visualization tab helps you understand how these parameters affect document 
 ### 2. RAG Query Processing
 
 **Purpose**: Answer user questions by finding relevant document chunks and generating contextual responses.
+
 
 **Key Files**: `ragchain.py`, `utils.py`
 
@@ -185,6 +188,21 @@ The visualization tab helps you understand how these parameters affect document 
       # Definition of Parser used to extract the text from the model response
       # From the Langchain libraries. See ragchain.py
       output_parser = StrOutputParser()
+
+      # This creates a pipeline: retrieve → format → prompt → generate → parse
+      rag_chain = (
+         {
+               "context": retriever | format_docs,    # Retrieve docs and format as single string
+               "question": RunnablePassthrough()      # Pass the question through unchanged
+         } 
+         | prompt_template                          # Insert context and question into prompt
+         | chat_model                               # Generate response using language model
+         | output_parser                            # Extract text from model response
+      )
+
+      # Step 9: Execute the RAG chain with the user's query
+      try:
+         response = rag_chain.invoke(query)
       ```
 
 ### 3. Embedding Visualization
